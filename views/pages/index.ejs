@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>My demo App</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
+    <style>
+        #msgWindow {
+            margin-top: 20px;
+        }
+
+        #msgs {
+            margin: 0px 25px;
+            min-height: 200px;
+            display: flex;
+            flex-flow: column nowrap;
+            justify-content: flex-end;
+            align-items: flex-start;
+        }
+
+        .msg {
+            margin: 5px 0;
+            border: 1px solid silver;
+            padding: 3px 7px;
+            display: inline-block;
+            position: relative;
+            border-radius: 10px;
+        }
+
+        .msg::before,
+        .msg::after {
+            content: "";
+            display: inline-block;
+            bottom: 0;
+            position: absolute;
+            border: 1px solid silver;
+        }
+
+        .msg::before {
+            right: -20px;
+            width: 15px;
+            height: 15px;
+            border-radius: 10px;
+        }
+
+        .msg::after {
+            right: -35px;
+            width: 10px;
+            height: 10px;
+            border-radius: 5px;
+        }
+
+        .msg.from {
+            align-self: flex-end;
+        }
+
+        .msg.to {
+            align-self: flex-start;
+        }
+
+        .msg.to::before {
+            right: inherit;
+            left: -20px;
+        }
+
+        .msg.to::after {
+            right: inherit;
+            left: -35px;
+        }
+
+        .msg.typing {
+            color: silver;
+        }
+
+        #msgForm input:focus,
+        #msgForm button:focus {
+            box-shadow: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div>
+        <div class="container">
+            <div class="row">
+                <div class="col msg-window-container">
+                    <div class="card" id="msgWindow">
+                        <div class="card-header"><span class="card-title">Chat GPT</span></div>
+                        <div class="card-body" id="msgs">
+
+
+                                   
+
+                                        <form action="#" id="formData">
+                                            <div class="form-row">
+                                                <div class="msg to">
+
+                                                Create indirect multiple-choice question to understand
+                                                &nbsp;<input type="text" name="input1" style="width: 150px;">
+                                                favourite
+                                                &nbsp;<input type="text" name="input2" style="width: 150px;">
+                                                activities for
+                                                &nbsp;<input type="text" name="input3" style="width: 150px;">
+                                              </div>
+                                            </div>
+                                               
+                                            <div id="appendContainer">
+                                            </div>
+                                                <br>
+                                                <div>
+                                                    <button type="submit" class="btn btn-secondary"
+                                                        style="float: right;">Submit</button>
+                                                </div>
+                                                <div id="loader"></div>
+                                        </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN"
+        crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.3/jquery.min.js"
+        integrity="sha512-STof4xm1wgkfm7heWqFJVn58Hm3EtS31XFaagaa8VMReCXAkQnJZ+jEy8PCC/iT18dFy95WcExNHFTqLyp72eQ=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script>
+        $(function () {
+            // Define some elements from the DOM and utility methods.
+            let $form = $("#msgForm"),
+                $newMsg = $form.find("input"),
+                $sendBtn = $form.find("button"),
+                $feed = $("#msgs"),
+                _wait = ms => new Promise((r, j) => setTimeout(r, ms)), // See [0]
+                _secs = (a, b) => Math.floor(Math.random() * (b - a + 1)) + a;
+
+            // Define our send method.
+            var _send = data => {
+                // Send data to a new .msg
+                let $msg = $('<div class="msg"></div>'),
+                    { sender, typing } = data;
+                if (sender !== "me") {
+                    $msg.addClass("to");
+                } else {
+                    $msg.addClass("from");
+                }
+                $msg.text(data.msg);
+                if (typing) $msg.addClass("typing");
+                $msg.appendTo($feed);
+                // If sending was successful, clear the text field.
+                $newMsg.val("");
+                // And simulate a reply from our agent.
+                if (sender === "me") setTimeout(_agentReply, 1000);
+                if (typing) return $msg; // ref to new DOM .msg
+            };
+
+
+
+            var _agentReply = () => {
+                // After a few seconds, the agent starts to type a message.
+                let waitAfew = _wait(_secs(3000, 5000)),
+                    showAgentTyping = async () => {
+                        console.log("agent is typing...");
+                        // Let the user know the agent is typing
+                        let $agentMsg = _send({ msg: "Agent is typing...", typing: true, sender: false });
+                        // and in a few seconds show the typed message.
+                        waitAfew.then(() => {
+                            // @TODO: Simulate actual typing by removing the typing message when the agent isn't typing, and before the agent sends the typed message. Also allow typing to continue a number of times with breaks in between.
+                            $agentMsg.text("Lorem ipsum dolor sit amet.");
+                            $agentMsg.removeClass("typing");
+                        });
+
+                    };
+                waitAfew.then(showAgentTyping());
+            };
+
+            // Define event handlers: Hitting Enter or Send should send the form.
+            $newMsg.on("keypress", function (e) {
+                // @TODO: Allow [mod] + [enter] to expand field & insert a <BR>
+                if (e.which === 13) {
+                    // Stop the prop
+                    e.stopPropagation(); e.preventDefault();
+                    // Wrap the msg and send!
+                    let theEnvelope = {
+                        msg: $newMsg.val(),
+                        sender: "me"
+                    };
+
+                    return _send(theEnvelope);
+                } else {
+                    // goggles
+                }
+            });
+            $sendBtn.on("click", function (e) {
+                // Stop the prop
+                e.stopPropagation(); e.preventDefault();
+                // Wrap the msg and send!
+                let theEnvelope = {
+                    msg: $newMsg.val(),
+                    sender: "me"
+                };
+
+                return _send(theEnvelope);
+            });
+        });
+    </script>
+
+    <script>
+        $(document).on("submit", "form", function (e) {
+            e.preventDefault();
+            myFun();
+            function myFun(url, id) {
+                $.ajax({
+                    beforeSend: function(){
+                        // Statement
+                        $("#loader").append(`<div class="spinner-border" style="width: 3rem; height: 3rem;" role="status">
+                                              <span class="sr-only"></span>
+                                                </div>`)
+                        },
+                    method: "POST",
+                    url: "http://localhost:4000/chatGpt/messages",
+                    data: $("#formData").serialize(),
+                    success: (response) => {
+                        console.log(response);
+                        let myArray = response.split("\n");
+                        console.log(myArray)
+                        for (let i = 2; i < myArray.length; i++) {
+                            if (i == 2) {
+                                $("#appendContainer").append(`<div class="msg to"> ${myArray[i]} </div><br>`);
+
+                            } else {
+                                $("#appendContainer").append(`
+                                <input class="form-check-input" type="radio" name="optionValue"
+                                    id="flexRadioDefault1" value="${myArray[i]}">
+                                ${myArray[i]} <br>`);
+                            }
+                        }
+
+                    },
+                    complete: function(){
+                         $('#loader').hide();
+                       }
+
+                })
+            }
+        })
+
+    </script>
+</body>
+
+</html>
